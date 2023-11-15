@@ -5,7 +5,6 @@
 ```
 source ~/simulation_ws/devel/setup.bash
 roslaunch rb1_base_gazebo warehouse_rb1.launch
-
 ```
 + Start the ROS1 bridge
 ```
@@ -13,7 +12,6 @@ source ~/catkin_ws/devel/setup.bash
 roslaunch load_params load_params_base.launch
 source /opt/ros/galactic/setup.bash
 ros2 run ros1_bridge parameter_bridge
-
 ```
 
 ## Launch files

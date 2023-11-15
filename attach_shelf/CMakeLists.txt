@@ -27,3 +27,16 @@ if(BUILD_TESTING)
 endif()
 
 ament_package()
+#cp9
+add_executable(pre_approach src/pre_approach.cpp)
+ament_target_dependencies(pre_approach rclcpp std_msgs geometry_msgs nav_msgs sensor_msgs tf2 tf2_ros)
+
+install(TARGETS
+  pre_approach
+  DESTINATION lib/${PROJECT_NAME})
+
+#folders
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}/
+)
