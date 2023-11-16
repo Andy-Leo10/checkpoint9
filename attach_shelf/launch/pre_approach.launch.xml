@@ -1,8 +1,8 @@
 <launch>
 
     <arg name="package_description" default="attach_shelf"/>
-    <arg name="rviz_config_file_name" default="pre_approach.rviz"/>
-    <arg name="custom_namespace" default="andy_leo"/>
+    <arg name="rviz_config_file_name" default="config1.rviz"/>
+    <arg name="custom_namespace" default="gypsi_danger"/>
     <arg name="obstacle" default="0.0"/>
     <arg name="degrees" default="0.0"/>
 
@@ -10,12 +10,9 @@
         <arg name="rviz_config_file_name" value="$(var rviz_config_file_name)"/>
     </include>
 
-    <group>
-        <push-ros-namespace namespace="$(var custom_namespace)"/>
-        <include file="$(find-pkg-share attach_shelf)/launch/part1.launch.xml">
-            <arg name="obstacle" value="$(var obstacle)"/>
-            <arg name="degrees" value="$(var degrees)"/>
-        </include>
-    </group>
-
+    <include file="$(find-pkg-share $(var package_description))/launch/part1.launch.xml">
+        <arg name="obstacle" value="$(var obstacle)"/>
+        <arg name="degrees" value="$(var degrees)"/>
+    </include>
+    
 </launch>

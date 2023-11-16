@@ -18,7 +18,7 @@ using std::placeholders::_1;
 class RobotRB1 : public rclcpp::Node
 {
 public:
-  RobotRB1(int argc, char *argv[], std::string topic_pub, std::string topic_laser, std::string topic_odometry)
+  RobotRB1(std::string topic_pub, std::string topic_laser, std::string topic_odometry)
       : Node("robot_rb1"), MAX_LINEAR_SPEED_(0.5), MAX_ANGULAR_SPEED_(0.2)
   {
     //publisher
@@ -29,12 +29,12 @@ public:
     //subscriber odometry
     odometry_subscriber_ = this->create_subscription<nav_msgs::msg::Odometry>(
         topic_odometry, 10, std::bind(&RobotRB1::odometry_callback, this, _1));
-    //timer
-    timer_ = this->create_wall_timer(
-        500ms, std::bind(&RobotRB1::timer_callback, this));
-    //arguments
-    obstacle_ = std::stof(argv[2]);
-    degrees_ = std::stof(argv[4]);
+
+    //parameters
+    this->declare_parameter("obstacle", 0.0);
+    this->declare_parameter("degrees", 0.0);
+    this->get_parameter("obstacle", obstacle_);
+    this->get_parameter("degrees", degrees_);
   }
 private:
     //publisher
@@ -48,16 +48,15 @@ private:
     //subscriber odometry
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odometry_subscriber_;
     float orientation_;
-    //timer
-    rclcpp::TimerBase::SharedPtr timer_;
+
     //arguments
     float obstacle_;
     float degrees_;
 
   void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
   {
-    front_distance_ = msg->ranges[360];
-    RCLCPP_INFO(this->get_logger(), "Front distance: '%.2f'", front_distance_);
+    front_distance_ = msg->ranges[540];
+    //RCLCPP_INFO(this->get_logger(), "Front distance: '%.2f'", front_distance_);
   }
 
   void odometry_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
@@ -70,17 +69,17 @@ private:
     tf2::Matrix3x3 m(q);
     double roll, pitch, yaw;
     m.getRPY(roll, pitch, yaw);
-    orientation_ = yaw;
-    RCLCPP_INFO(this->get_logger(), "Angle degree: '%.2f'", front_distance_*180/M_PI);
+    orientation_ = yaw*180/M_PI;
+    //RCLCPP_INFO(this->get_logger(), "Angle degree: '%.2f'", orientation_);
   }
   
-}
+};
 
 int main(int argc, char *argv[])
 {
   rclcpp::init(argc, argv);
   rclcpp::spin(
-      std::make_shared<RobotRB1>(argc,argv,"robot/cmd_vel","scan","odom"));
+      std::make_shared<RobotRB1>("robot/cmd_vel","scan","odom"));
   rclcpp::shutdown();
   return 0;
 }
