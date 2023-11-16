@@ -4,7 +4,7 @@
     <arg name="rviz_config_file_name" default="config1.rviz"/>
     <arg name="custom_namespace" default="gypsi_danger"/>
     <arg name="obstacle" default="0.0"/>
-    <arg name="degrees" default="0.0"/>
+    <arg name="degrees" default="0"/>
 
     <include file="$(find-pkg-share $(var package_description))/launch/start_rviz_with_arguments.launch.py">
         <arg name="rviz_config_file_name" value="$(var rviz_config_file_name)"/>
