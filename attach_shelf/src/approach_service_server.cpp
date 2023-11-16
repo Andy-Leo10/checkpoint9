@@ -17,29 +17,29 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <math.h>
 #include <chrono>
-#include "attach_shelf/srv/got_to_loading.hpp"
+#include "attach_shelf/srv/go_to_loading.hpp"
 
 class MyServiceServer : public rclcpp::Node
 {
 public:
     MyServiceServer() : Node("my_service_server")
     {
-        service_ = this->create_service<attach_shelf::srv::got_to_loading>("mi_servicio", 
+        service_ = this->create_service<attach_shelf::srv::GoToLoading>("mi_servicio", 
             std::bind(&MyServiceServer::handle_service, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     }
 
 private:
     void handle_service(
         const std::shared_ptr<rmw_request_id_t> request_header,
-        const std::shared_ptr<attach_shelf::srv::got_to_loading::Request> request,
-        std::shared_ptr<attach_shelf::srv::got_to_loading::Response> response)
+        const std::shared_ptr<attach_shelf::srv::GoToLoading::Request> request,
+        std::shared_ptr<attach_shelf::srv::GoToLoading::Response> response)
     {
         (void)request_header;
         RCLCPP_INFO(this->get_logger(), "Recibida solicitud: %s", request->attach_to_shelf ? "true" : "false");
         response->complete = true;
     }
 
-    rclcpp::Service<attach_shelf::srv::got_to_loading>::SharedPtr service_;
+    rclcpp::Service<attach_shelf::srv::GoToLoading>::SharedPtr service_;
 };
 
 int main(int argc, char **argv)
