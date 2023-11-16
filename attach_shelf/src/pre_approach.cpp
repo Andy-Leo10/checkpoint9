@@ -44,6 +44,8 @@ private:
     geometry_msgs::msg::Twist pub_msg_;
     const float MAX_LINEAR_SPEED_;
     const float MAX_ANGULAR_SPEED_;
+    const float ZERO_LINEAR_SPEED_ = 0.0;
+    const float ZERO_ANGULAR_SPEED_ = 0.0;
     //subscriber laser
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr laser_subscriber_;
     float front_distance_;
@@ -56,6 +58,10 @@ private:
     //timer
     rclcpp::TimerBase::SharedPtr timer_;
     const float TIMER_PERIOD_MS_;
+    //steps
+    bool step1_completed_ = false;
+    bool step2_completed_ = false;
+    bool step3_completed_ = false;
 
   void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
   {
@@ -81,8 +87,74 @@ private:
   {
     this->get_parameter("obstacle", obstacle_);
     this->get_parameter("degrees", degrees_);
-    RCLCPP_INFO(this->get_logger(), "Obstacle: '%.2f' Degrees: '%.d'", obstacle_, degrees_);
+    //step 1: go until obstacle
+    if (!step1_completed_)
+    {
+      if (front_distance_ > obstacle_)
+      {
+        robot_move(MAX_LINEAR_SPEED_, ZERO_ANGULAR_SPEED_);
+      }
+      else
+      {
+        robot_move(ZERO_LINEAR_SPEED_,ZERO_ANGULAR_SPEED_);
+        step1_completed_ = true;
+      }
+    }
+    //step 2: turn 'degrees' degrees
+    if (!step2_completed_ && step1_completed_)
+    {
+      /*orientation control:
+      -control variable : orientation_
+      -desired variable : values close to degrees_
+      */
+      float control_var=orientation_*M_PI/180;
+      float desired_var=degrees_*M_PI/180;
+      step2_completed_=controller_kp(control_var,desired_var,kp:0.5,tolerance:1.0);
+    }
   }
+
+  void robot_move(float linear_speed, float angular_speed)
+  {
+    pub_msg_.linear.x = linear_speed;
+    pub_msg_.angular.z = angular_speed;
+    publisher_->publish(pub_msg_);
+  }
+
+  template <typename T>
+  T saturate(T var, T min, T max)
+  {
+    if (var > max)
+    {
+      return max;
+    }
+    else if (var < min)
+    {
+      return min;
+    }
+    else
+    {
+      return var;
+    }
+  }
+
+  bool controller_kp(float control_var, float desired_var, float kp, float tolerance)
+  {
+    float error = desired_var - control_var;
+    float angular_speed = kp * error;
+    angular_speed = saturate(angular_speed, -MAX_ANGULAR_SPEED_, MAX_ANGULAR_SPEED_);
+    robot_move(ZERO_LINEAR_SPEED_, angular_speed);
+    RCLCPP_INFO(this->get_logger(), "Error: '%.2f'", error*180/M_PI);
+    if (fabs(error) < tolerance)
+    {
+      robot_move(ZERO_LINEAR_SPEED_, ZERO_ANGULAR_SPEED_);
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
+
 };
 
 int main(int argc, char *argv[])
