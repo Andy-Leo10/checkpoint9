@@ -20,7 +20,7 @@ class RobotRB1 : public rclcpp::Node
 {
 public:
   RobotRB1(std::string topic_pub, std::string topic_laser, std::string topic_odometry)
-      : Node("robot_rb1"), MAX_LINEAR_SPEED_(0.5), MAX_ANGULAR_SPEED_(0.2), TIMER_PERIOD_MS_(100)
+      : Node("robot_rb1"), MAX_LINEAR_SPEED_(0.5), MAX_ANGULAR_SPEED_(0.4), TIMER_PERIOD_MS_(100)
   {
     //publisher
     publisher_ = this->create_publisher<geometry_msgs::msg::Twist>(topic_pub, 10);
@@ -103,14 +103,17 @@ private:
     //step 2: turn 'degrees' degrees
     if (!step2_completed_ && step1_completed_)
     {
-      /*orientation control:
+      /*orientation control
       -control variable : orientation_
       -desired variable : values close to degrees_
       */
       float control_var=orientation_*M_PI/180;
       float desired_var=degrees_*M_PI/180;
-      step2_completed_=controller_kp(control_var,desired_var,kp:0.5,tolerance:1.0);
+      float kp = 1.0;
+      float tolerance = 1.0*M_PI/180;
+      step2_completed_=controller_kp(control_var, desired_var, kp, tolerance);
     }
+    
   }
 
   void robot_move(float linear_speed, float angular_speed)
@@ -143,14 +146,15 @@ private:
     float angular_speed = kp * error;
     angular_speed = saturate(angular_speed, -MAX_ANGULAR_SPEED_, MAX_ANGULAR_SPEED_);
     robot_move(ZERO_LINEAR_SPEED_, angular_speed);
-    RCLCPP_INFO(this->get_logger(), "Error: '%.2f'", error*180/M_PI);
     if (fabs(error) < tolerance)
     {
+      RCLCPP_INFO(this->get_logger(), "desired value achieved!");
       robot_move(ZERO_LINEAR_SPEED_, ZERO_ANGULAR_SPEED_);
       return true;
     }
     else
     {
+      RCLCPP_INFO(this->get_logger(), "Error: '%.2f'", error*180/M_PI);
       return false;
     }
   }
