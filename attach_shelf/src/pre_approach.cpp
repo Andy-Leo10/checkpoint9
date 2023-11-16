@@ -31,10 +31,8 @@ public:
     odometry_subscriber_ = this->create_subscription<nav_msgs::msg::Odometry>(
         topic_odometry, 10, std::bind(&RobotRB1::odometry_callback, this, _1));
     //parameters
-    param_obstacle_desc.description = "Distance to obstacle";
-    this->declare_parameter<float>("obstacle", 0.0, param_obstacle_desc);
-    param_degrees_desc.description = "Degrees to turn";
-    this->declare_parameter<float>("degrees", 0.0, param_degrees_desc);
+    this->declare_parameter<float>("obstacle", 0.0);
+    this->declare_parameter<int>("degrees", 0);
     //timer
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds((int)TIMER_PERIOD_MS_),
@@ -54,9 +52,7 @@ private:
     float orientation_;
     //arguments
     float obstacle_;
-    auto param_obstacle_desc= rclcpp::ParameterDescriptor();
-    float degrees_;
-    auto param_degrees_desc= rclcpp::ParameterDescriptor();
+    int degrees_;
     //timer
     rclcpp::TimerBase::SharedPtr timer_;
     const float TIMER_PERIOD_MS_;
@@ -85,7 +81,7 @@ private:
   {
     this->get_parameter("obstacle", obstacle_);
     this->get_parameter("degrees", degrees_);
-    RCLCPP_INFO(this->get_logger(), "Obstacle: '%.2f' Degrees: '%.2f'", obstacle_, degrees_);
+    RCLCPP_INFO(this->get_logger(), "Obstacle: '%.2f' Degrees: '%.d'", obstacle_, degrees_);
   }
 };
 
