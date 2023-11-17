@@ -32,7 +32,7 @@ public:
         publisher_ = this->create_publisher<geometry_msgs::msg::Twist>(topic_pub, 10);
         //subscriber laser
         laser_subscriber_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
-            topic_laser, 10, std::bind(&RobotRB1::laser_intensities_callback, this, _1));
+            topic_laser, 10, std::bind(&MyServiceServer::laser_intensities_callback, this, _1));
         //service
         service_ = this->create_service<GoToLanding>("approach_shelf", 
             std::bind(&MyServiceServer::service_callback, this, std::placeholders::_1, std::placeholders::_2));
@@ -42,8 +42,8 @@ private:
     //publisher
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
     geometry_msgs::msg::Twist pub_msg_;
-    const float MAX_LINEAR_SPEED_;
-    const float MAX_ANGULAR_SPEED_;
+    const float MAX_LINEAR_SPEED_=0.5;
+    const float MAX_ANGULAR_SPEED_=0.4;
     const float ZERO_LINEAR_SPEED_ = 0.0;
     const float ZERO_ANGULAR_SPEED_ = 0.0;
     //subscriber laser
@@ -61,7 +61,7 @@ private:
         //detect the intensities greater than 7000 and store the indexes in a vector
         std::vector<int> intensities_indexes;
         float intensity_threshold = 7000;
-        for (int i = 0; i < msg->ranges.size(); i++)
+        for (std::vector<float>::size_type i = 0; i < msg->ranges.size(); i++)
         {
             if (msg->intensities[i] > intensity_threshold)
             {
@@ -72,7 +72,7 @@ private:
         std::vector<std::vector<int>> legs_indexes;
         std::vector<int> leg_indexes;
         int separation_threshold = 5;
-        for (int i = 0; i < intensities_indexes.size(); i++)
+        for (std::vector<float>::size_type i = 0; i < intensities_indexes.size(); i++)
         {
             if (i == 0)
             {
@@ -92,8 +92,20 @@ private:
                 }
             }
         }
-        //print how many legs were detected
-        RCLCPP_INFO(this->get_logger(), "Legs detected: %d", legs_indexes.size());
+        if (!leg_indexes.empty())
+        {
+            legs_indexes.push_back(leg_indexes);
+        }
+        //print how many legs were detected: std::vector::size_type
+        RCLCPP_INFO(this->get_logger(), "Legs detected: %zu", legs_indexes.size());
+        for (std::vector<float>::size_type i = 0; i < legs_indexes.size(); i++)
+        {
+            RCLCPP_INFO(this->get_logger(), "Leg %zu: ", i);
+            for (std::vector<float>::size_type j = 0; j < legs_indexes[i].size(); j++)
+            {
+                RCLCPP_INFO(this->get_logger(), "%d ", legs_indexes[i][j]);
+            }
+        }
     }
 
     void service_callback(

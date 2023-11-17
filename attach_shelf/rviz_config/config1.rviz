@@ -4,7 +4,9 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Global Options1
         - /TF1/Frames1
+        - /LaserScan1
         - /Odometry1/Topic1
       Splitter Ratio: 0.5
     Tree Height: 553
@@ -162,13 +164,13 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz_default_plugins/LaserScan
       Color: 255; 255; 255
-      Color Transformer: FlatColor
+      Color Transformer: Intensity
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 8000
-      Min Color: 0; 0; 0
+      Min Color: 85; 85; 255
       Min Intensity: 0
       Name: LaserScan
       Position Transformer: XYZ
@@ -184,7 +186,7 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /scan
       Use Fixed Frame: true
-      Use rainbow: true
+      Use rainbow: false
       Value: true
     - Angle Tolerance: 0.10000000149011612
       Class: rviz_default_plugins/Odometry
@@ -271,7 +273,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 7.990333557128906
+      Distance: 7.841124534606934
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
