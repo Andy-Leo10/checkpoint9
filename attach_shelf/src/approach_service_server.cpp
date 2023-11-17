@@ -8,6 +8,7 @@
 -publish to the topics /elevator_up and /elevator_down
 */
 
+//general libraries
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/string.hpp>
 #include <geometry_msgs/msg/twist.hpp>
@@ -17,9 +18,14 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <math.h>
 #include <chrono>
+//custom service
 #include "attach_shelf/srv/go_to_loading.hpp"
+//to pusblish the transform
 #include <tf2_ros/transform_broadcaster.h>
 #include <geometry_msgs/msg/transform_stamped.hpp>
+//to listen to the transform time stamp
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
 
 using GoToLanding = attach_shelf::srv::GoToLoading;
 using std::placeholders::_1;
@@ -40,6 +46,12 @@ public:
             std::bind(&MyServiceServer::service_callback, this, std::placeholders::_1, std::placeholders::_2));
         //broadcast transform
         broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
+        // initialize the tf2 listener
+        auto clock = this->get_clock();
+        tf_buffer_ = std::make_shared<tf2_ros::Buffer>(clock);
+        tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+        origin_frame_ = "robot_odom";
+        destiny_frame_ = "robot_front_laser_base_link";
     }
 
 private:
@@ -56,9 +68,14 @@ private:
     //service
     rclcpp::Service<GoToLanding>::SharedPtr service_;
     //variables
+    float cart_magnitude_=0.0;
     float cart_x_=0.0;
     float cart_y_=0.0;
     float cart_yaw_=0.0;
+    // tf2 listener variables
+    std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+    std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+    std::string origin_frame_, destiny_frame_;
     //broadcast transform
     std::shared_ptr<tf2_ros::TransformBroadcaster> broadcaster_;
 
@@ -118,15 +135,34 @@ private:
             int leg_index_1 = legs_indexes[0][0];
             int leg_index_2 = legs_indexes[1][0];
             // The rays are from 0 to 1080 clockwise [225 to -45 degrees]
-            cart_x_ = (msg->ranges[leg_index_1] + msg->ranges[leg_index_2]) / 2.0;
-            cart_y_ = 0.0;
+            cart_magnitude_ = (msg->ranges[leg_index_1] + msg->ranges[leg_index_2]) / 2.0;
             // Calculate the average angle between the two legs
-            float cart_yaw_ = (msg->angle_min + (leg_index_1 + leg_index_2) / 2.0 * msg->angle_increment);
+            float cart_yaw_ = -(msg->angle_min + (leg_index_1 + leg_index_2) / 2.0 * msg->angle_increment);
+            // Calculate the cartesian coordinates 
+            cart_x_ = cart_magnitude_ * cos(cart_yaw_);
+            cart_y_ = cart_magnitude_ * sin(cart_yaw_);
             tf2::Quaternion cart_quat_;
             cart_quat_.setRPY(0.0, 0.0, cart_yaw_);
+            //------------for take the value of time stamp--------------
+            geometry_msgs::msg::TransformStamped transformStamped;
+            geometry_msgs::msg::Vector3 translation;
+            geometry_msgs::msg::Quaternion rotation;
+            try
+            {
+            transformStamped = tf_buffer_->lookupTransform(
+                origin_frame_, destiny_frame_, tf2::TimePointZero);
+            translation = transformStamped.transform.translation;
+            rotation = transformStamped.transform.rotation;
+            }
+            catch (tf2::TransformException &ex)
+            {
+            RCLCPP_WARN(this->get_logger(), "Could not transform %s to %s: %s",
+                        origin_frame_.c_str(), destiny_frame_.c_str(), ex.what());
+            }
+            //------------for take the value of time stamp--------------
             geometry_msgs::msg::TransformStamped transformStamped_;
-            transformStamped_.header.stamp = rclcpp::Time::now();
-            transformStamped_.header.frame_id = "robot_front_laser_link";
+            transformStamped_.header.stamp = transformStamped.header.stamp;
+            transformStamped_.header.frame_id = "robot_base_link";
             transformStamped_.child_frame_id = "cart_frame";
             transformStamped_.transform.translation.x = cart_x_;
             transformStamped_.transform.translation.y = cart_y_;
