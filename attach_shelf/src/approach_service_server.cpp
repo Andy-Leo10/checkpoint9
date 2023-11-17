@@ -18,6 +18,8 @@
 #include <math.h>
 #include <chrono>
 #include "attach_shelf/srv/go_to_loading.hpp"
+#include <tf2_ros/transform_broadcaster.h>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 
 using GoToLanding = attach_shelf::srv::GoToLoading;
 using std::placeholders::_1;
@@ -36,6 +38,8 @@ public:
         //service
         service_ = this->create_service<GoToLanding>("approach_shelf", 
             std::bind(&MyServiceServer::service_callback, this, std::placeholders::_1, std::placeholders::_2));
+        //broadcast transform
+        broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
     }
 
 private:
@@ -52,9 +56,11 @@ private:
     //service
     rclcpp::Service<GoToLanding>::SharedPtr service_;
     //variables
-    bool legs_0_=false;
-    bool legs_1_=false;
-    bool legs_2_=false;
+    float cart_x_=0.0;
+    float cart_y_=0.0;
+    float cart_yaw_=0.0;
+    //broadcast transform
+    std::shared_ptr<tf2_ros::TransformBroadcaster> broadcaster_;
 
     void laser_intensities_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
     {
@@ -97,14 +103,39 @@ private:
             legs_indexes.push_back(leg_indexes);
         }
         //print how many legs were detected: std::vector::size_type
-        RCLCPP_INFO(this->get_logger(), "Legs detected: %zu", legs_indexes.size());
-        for (std::vector<float>::size_type i = 0; i < legs_indexes.size(); i++)
+        //RCLCPP_INFO(this->get_logger(), "Legs detected: %zu", legs_indexes.size());
+        //for (std::vector<float>::size_type i = 0; i < legs_indexes.size(); i++)
+        //{
+        //    RCLCPP_INFO(this->get_logger(), "Leg %zu: ", i);
+        //    for (std::vector<float>::size_type j = 0; j < legs_indexes[i].size(); j++)
+        //    {
+        //        RCLCPP_INFO(this->get_logger(), "%d ", legs_indexes[i][j]);
+        //    }
+        //}
+        if (legs_indexes.size() == 2)
         {
-            RCLCPP_INFO(this->get_logger(), "Leg %zu: ", i);
-            for (std::vector<float>::size_type j = 0; j < legs_indexes[i].size(); j++)
-            {
-                RCLCPP_INFO(this->get_logger(), "%d ", legs_indexes[i][j]);
-            }
+            // Choose 1 point from each leg
+            int leg_index_1 = legs_indexes[0][0];
+            int leg_index_2 = legs_indexes[1][0];
+            // The rays are from 0 to 1080 clockwise [225 to -45 degrees]
+            cart_x_ = (msg->ranges[leg_index_1] + msg->ranges[leg_index_2]) / 2.0;
+            cart_y_ = 0.0;
+            // Calculate the average angle between the two legs
+            float cart_yaw_ = (msg->angle_min + (leg_index_1 + leg_index_2) / 2.0 * msg->angle_increment);
+            tf2::Quaternion cart_quat_;
+            cart_quat_.setRPY(0.0, 0.0, cart_yaw_);
+            geometry_msgs::msg::TransformStamped transformStamped_;
+            transformStamped_.header.stamp = rclcpp::Time::now();
+            transformStamped_.header.frame_id = "robot_front_laser_link";
+            transformStamped_.child_frame_id = "cart_frame";
+            transformStamped_.transform.translation.x = cart_x_;
+            transformStamped_.transform.translation.y = cart_y_;
+            transformStamped_.transform.translation.z = 0.0;
+            transformStamped_.transform.rotation.x = cart_quat_.x();
+            transformStamped_.transform.rotation.y = cart_quat_.y();
+            transformStamped_.transform.rotation.z = cart_quat_.z();
+            transformStamped_.transform.rotation.w = cart_quat_.w();
+            broadcaster_->sendTransform(transformStamped_);
         }
     }
 
