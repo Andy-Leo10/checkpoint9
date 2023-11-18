@@ -44,14 +44,15 @@ public:
         //service
         service_ = this->create_service<GoToLanding>("approach_shelf", 
             std::bind(&MyServiceServer::service_callback, this, std::placeholders::_1, std::placeholders::_2));
-        //broadcast transform
-        broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
-        // initialize the tf2 listener
+        // initialize the tf2 listener for time stamp
         auto clock = this->get_clock();
         tf_buffer_ = std::make_shared<tf2_ros::Buffer>(clock);
         tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
         origin_frame_ = "robot_odom";
         destiny_frame_ = "robot_front_laser_base_link";
+        //broadcast transform
+        broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
+        object_frame_ = "cart_frame";
     }
 
 private:
@@ -72,12 +73,16 @@ private:
     float cart_x_=0.0;
     float cart_y_=0.0;
     float cart_yaw_=0.0;
+    tf2::Quaternion cart_quat_;
+    int number_of_legs_=0;
     // tf2 listener variables
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
     std::string origin_frame_, destiny_frame_;
     //broadcast transform
     std::shared_ptr<tf2_ros::TransformBroadcaster> broadcaster_;
+    geometry_msgs::msg::TransformStamped transformStamped_;
+    std::string object_frame_;
 
     void laser_intensities_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
     {
@@ -129,7 +134,8 @@ private:
         //        RCLCPP_INFO(this->get_logger(), "%d ", legs_indexes[i][j]);
         //    }
         //}
-        if (legs_indexes.size() == 2)
+        number_of_legs_ = legs_indexes.size();
+        if (number_of_legs_ == 2)
         {
             // Choose 1 point from each leg
             int leg_index_1 = legs_indexes[0][0];
@@ -137,22 +143,21 @@ private:
             // The rays are from 0 to 1080 clockwise [225 to -45 degrees]
             cart_magnitude_ = (msg->ranges[leg_index_1] + msg->ranges[leg_index_2]) / 2.0;
             // Calculate the average angle between the two legs
-            float cart_yaw_ = -(msg->angle_min + (leg_index_1 + leg_index_2) / 2.0 * msg->angle_increment);
+            cart_yaw_ = -(msg->angle_min + (leg_index_1 + leg_index_2) / 2.0 * msg->angle_increment);
             // Calculate the cartesian coordinates 
             cart_x_ = cart_magnitude_ * cos(cart_yaw_);
             cart_y_ = cart_magnitude_ * sin(cart_yaw_);
-            tf2::Quaternion cart_quat_;
             cart_quat_.setRPY(0.0, 0.0, cart_yaw_);
             //------------for take the value of time stamp--------------
-            geometry_msgs::msg::TransformStamped transformStamped;
-            geometry_msgs::msg::Vector3 translation;
-            geometry_msgs::msg::Quaternion rotation;
+            geometry_msgs::msg::TransformStamped transformStamped1;
+            //geometry_msgs::msg::Vector3 translation;
+            //geometry_msgs::msg::Quaternion rotation;
             try
             {
-            transformStamped = tf_buffer_->lookupTransform(
+            transformStamped1 = tf_buffer_->lookupTransform(
                 origin_frame_, destiny_frame_, tf2::TimePointZero);
-            translation = transformStamped.transform.translation;
-            rotation = transformStamped.transform.rotation;
+            //translation = transformStamped1.transform.translation;
+            //rotation = transformStamped1.transform.rotation;
             }
             catch (tf2::TransformException &ex)
             {
@@ -160,10 +165,9 @@ private:
                         origin_frame_.c_str(), destiny_frame_.c_str(), ex.what());
             }
             //------------for take the value of time stamp--------------
-            geometry_msgs::msg::TransformStamped transformStamped_;
-            transformStamped_.header.stamp = transformStamped.header.stamp;
-            transformStamped_.header.frame_id = "robot_base_link";
-            transformStamped_.child_frame_id = "cart_frame";
+            transformStamped_.header.stamp = transformStamped1.header.stamp;
+            transformStamped_.header.frame_id = destiny_frame_;
+            transformStamped_.child_frame_id = object_frame_;
             transformStamped_.transform.translation.x = cart_x_;
             transformStamped_.transform.translation.y = cart_y_;
             transformStamped_.transform.translation.z = 0.0;
@@ -179,11 +183,23 @@ private:
         const std::shared_ptr<GoToLanding::Request> request,
         std::shared_ptr<GoToLanding::Response> response)
     {
-        RCLCPP_INFO(this->get_logger(), "Recibida solicitud: %s", request->attach_to_shelf ? "true" : "false");
-        response->complete = true;
+        //if service request is true
+        if(request->attach_to_shelf)
+        {
+            if(number_of_legs_==2)
+            {
+                //code to move the robot to the cart_frame
+                response->complete = true;
+            }
+            else response->complete = false;
+        }
+        else
+        {
+            RCLCPP_INFO(this->get_logger(), "Request is false: attach to shelf will not be executed");
+            response->complete = false;
+        }
     }
 
-    
 };
 
 int main(int argc, char **argv)
