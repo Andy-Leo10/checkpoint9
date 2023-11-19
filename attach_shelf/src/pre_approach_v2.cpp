@@ -33,7 +33,7 @@ public:
     //parameters
     this->declare_parameter<float>("obstacle", 0.0);
     this->declare_parameter<int>("degrees", 0);
-    this->declare_parameter<bool>("final_approach", false)
+    this->declare_parameter<bool>("final_approach", false);
     //timer
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds((int)TIMER_PERIOD_MS_),

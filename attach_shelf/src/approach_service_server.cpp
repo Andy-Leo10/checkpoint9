@@ -10,7 +10,7 @@
 
 //general libraries
 #include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/string.hpp>
+#include <std_msgs/msg/empty.hpp>
 #include <geometry_msgs/msg/twist.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
@@ -59,6 +59,8 @@ public:
         timer_ = this->create_wall_timer(
         std::chrono::milliseconds((int)TIMER_PERIOD_MS_),
         std::bind(&MyServiceServer::timer_callback, this));
+        //elevator up: ros2 topic pub /elevator_up std_msgs/msg/Empty -1
+        elevator_up_publisher_ = this->create_publisher<std_msgs::msg::Empty>("/elevator_up", 10);
     }
 
 private:
@@ -96,6 +98,8 @@ private:
     //timer
     rclcpp::TimerBase::SharedPtr timer_;
     const float TIMER_PERIOD_MS_;
+    //elevator up
+    rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr elevator_up_publisher_;
 
     void timer_callback()
     {
@@ -114,6 +118,10 @@ private:
                 robot_move(ZERO_LINEAR_SPEED_, ZERO_ANGULAR_SPEED_);
                 move_extra_distance_ = false;
                 execute_service_ = false;
+                //publish to the topics /elevator_up
+                RCLCPP_INFO(this->get_logger(), "Publishing to elevator_up");
+                std_msgs::msg::Empty msg;
+                elevator_up_publisher_->publish(msg);
             }
 
         }
@@ -178,7 +186,7 @@ private:
             // The rays are from 0 to 1080 clockwise [225 to -45 degrees]
             cart_magnitude_ = (msg->ranges[leg_index_1] + msg->ranges[leg_index_2]) / 2.0;
             // Calculate the average angle between the two legs
-            cart_yaw_ = -(msg->angle_min + (leg_index_1 + leg_index_2) / 2.0 * msg->angle_increment);
+            cart_yaw_ = (msg->angle_min + (leg_index_1 + leg_index_2) / 2.0 * msg->angle_increment);
             // Calculate the cartesian coordinates 
             cart_x_ = cart_magnitude_ * cos(cart_yaw_);
             cart_y_ = cart_magnitude_ * sin(cart_yaw_);

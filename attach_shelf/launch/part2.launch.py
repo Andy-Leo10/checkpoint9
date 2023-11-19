@@ -25,9 +25,9 @@ def generate_launch_description():
         executable="final_approach",
         output="screen",
         name="pre_approach_v2",
-        parameters=["obstacle", obstacle_param,
-                    "degrees", degrees_param, 
-                    "final_approach", final_approach_param]
+        parameters=[{"obstacle": obstacle_param,
+                    "degrees": degrees_param, 
+                    "final_approach": final_approach_param}]
     )
     
     #create and return the launch description object
