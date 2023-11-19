@@ -1,11 +1,11 @@
 '''
 this is a launch file for attaching the shelf to the robot:
--executes the approach_service_server.cpp script
--executes the pre_approach_v2.cpp script which has parameters
+-executes the pre_approach_v2.cpp LAUNCH file which has parameters
     obstacle (float)
     degrees (int)
     final_approach (bool)
--executes RVIZ
+-executes RVIZ existing LAUNCH file
+-executes the approach_service_server.cpp script
 '''
 
 #essential libraries
@@ -43,13 +43,13 @@ def generate_launch_description():
     
     #rviz
     start_rviz_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
+        PythonLaunchDescriptionSource([
             PathJoinSubstitution([
                 FindPackageShare(package_description),
                 'launch',
                 'start_rviz_with_arguments.launch.py'
             ])
-        ),
+        ]),
         launch_arguments={
             'package_description': package_description_param,
             'rviz_config_file_name': rviz_config_file_name_param
@@ -58,18 +58,26 @@ def generate_launch_description():
     
     #final_approach
     start_final_approach_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
+        PythonLaunchDescriptionSource([
             PathJoinSubstitution([
                 FindPackageShare(package_description),
                 'launch',
                 'part2.launch.py'
             ])
-        ),
+        ]),
         launch_arguments={
             'obstacle': obstacle_param,
             'degrees': degrees_param,
             'final_approach': final_approach_param
             }.items()
+    )
+    
+    #service_server
+    start_service_server = Node(
+        package="attach_shelf",
+        executable="approach_service_server",
+        output="screen",
+        name="approach_service_server_node"
     )
     
     # create and return the launch description object
@@ -80,5 +88,6 @@ def generate_launch_description():
             package_description_arg,
             rviz_config_file_name_arg,
             start_rviz_launch,
-            start_final_approach_launch
+            start_final_approach_launch,
+            start_service_server
     ])

@@ -33,6 +33,7 @@ public:
     //parameters
     this->declare_parameter<float>("obstacle", 0.0);
     this->declare_parameter<int>("degrees", 0);
+    this->declare_parameter<bool>("final_approach", false)
     //timer
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds((int)TIMER_PERIOD_MS_),
@@ -55,6 +56,7 @@ private:
     //arguments
     float obstacle_;
     int degrees_;
+    bool final_approach_;
     //timer
     rclcpp::TimerBase::SharedPtr timer_;
     const float TIMER_PERIOD_MS_;
@@ -87,6 +89,7 @@ private:
   {
     this->get_parameter("obstacle", obstacle_);
     this->get_parameter("degrees", degrees_);
+    this->get_parameter("final_approach", final_approach_);
     //step 1: go until obstacle
     if (!step1_completed_)
     {
