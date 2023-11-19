@@ -34,8 +34,8 @@ using std::placeholders::_2;
 class MyServiceServer : public rclcpp::Node
 {
 public:
-    MyServiceServer(std::string topic_pub, std::string topic_laser, std::string topic_odometry)
-         : Node("my_service_server"), 
+    MyServiceServer(std::string topic_pub, std::string topic_laser)
+         : Node("my_service_server"), TIMER_PERIOD_MS_(100)
     {
         //subscriber laser
         laser_subscriber_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
@@ -58,7 +58,7 @@ public:
         //timer
         timer_ = this->create_wall_timer(
         std::chrono::milliseconds((int)TIMER_PERIOD_MS_),
-        std::bind(&RobotRB1::timer_callback, this));
+        std::bind(&MyServiceServer::timer_callback, this));
     }
 
 private:
@@ -68,6 +68,7 @@ private:
     //service
     rclcpp::Service<GoToLanding>::SharedPtr service_;
     bool execute_service_;
+    bool move_extra_distance_;
     //variables
     float cart_magnitude_=0.0;
     float cart_x_=0.0;
@@ -75,6 +76,8 @@ private:
     float cart_yaw_=0.0;
     tf2::Quaternion cart_quat_;
     int number_of_legs_=0;
+    float extra_distance_=0.9;
+    int times_to_move_extra_distance_;
     // tf2 listener variables
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
@@ -92,7 +95,29 @@ private:
     const float ZERO_ANGULAR_SPEED_ = 0.0;
     //timer
     rclcpp::TimerBase::SharedPtr timer_;
-    const float TIMER_PERIOD_MS_=100;
+    const float TIMER_PERIOD_MS_;
+
+    void timer_callback()
+    {
+        if(move_extra_distance_)
+        {
+            //stop the robot after travel an "extra_distance_"
+            //based on the time period
+            if(times_to_move_extra_distance_>0)
+            {
+                RCLCPP_INFO(this->get_logger(), "Moving extra distance: %d", times_to_move_extra_distance_);
+                robot_move(MAX_LINEAR_SPEED_, ZERO_ANGULAR_SPEED_);
+                times_to_move_extra_distance_--;
+            }
+            else
+            {
+                robot_move(ZERO_LINEAR_SPEED_, ZERO_ANGULAR_SPEED_);
+                move_extra_distance_ = false;
+                execute_service_ = false;
+            }
+
+        }
+    }
 
     void laser_intensities_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
     {
@@ -188,25 +213,29 @@ private:
             broadcaster_->sendTransform(transformStamped_);
 
             //depending on the service request, move the robot to the cart_frame
-            if(execute_service_)
+            if(execute_service_ && !move_extra_distance_)
             {
                 //calculate the distance to the cart_frame
                 float distance_to_cart = sqrt(pow(cart_x_,2)+pow(cart_y_,2));
                 //move the robot to the cart_frame
-                if(distance_to_cart>0.05)
+                if(distance_to_cart>0.4)
                 {
+                    RCLCPP_INFO(this->get_logger(), "Moving to cart_frame");
                     robot_move(MAX_LINEAR_SPEED_, ZERO_ANGULAR_SPEED_);
                 }
                 else
                 {
-                    robot_move(ZERO_LINEAR_SPEED_,ZERO_ANGULAR_SPEED_);
-                    execute_service_ = false;
+                    //stop the robot after travel an "extra_distance_"
+                    //calculate the number of times to move the robot
+                    times_to_move_extra_distance_ = (int)((extra_distance_/MAX_LINEAR_SPEED_)/(TIMER_PERIOD_MS_/1000.0));
+                    RCLCPP_INFO(this->get_logger(), "TIMES TO MOVE EXTRA DISTANCE: %d", times_to_move_extra_distance_);
+                    //by enabling a timer
+                    move_extra_distance_ = true;
                 }
             }
+            
         }
     }
-
-
 
     void service_callback(
         const std::shared_ptr<GoToLanding::Request> request,
@@ -234,12 +263,18 @@ private:
         }
     }
 
+    void robot_move(float linear_speed, float angular_speed)
+    {
+        pub_msg_.linear.x = linear_speed;
+        pub_msg_.angular.z = angular_speed;
+        publisher_->publish(pub_msg_);
+    }
 };
 
 int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<MyServiceServer>("robot/cmd_vel","scan","odom"));
+    rclcpp::spin(std::make_shared<MyServiceServer>("robot/cmd_vel","scan"));
     rclcpp::shutdown();
     return 0;
 }
