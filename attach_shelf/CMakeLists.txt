@@ -42,6 +42,7 @@ rosidl_target_interfaces(approach_service_server ${PROJECT_NAME} "rosidl_typesup
 #cp9-part2
 add_executable(final_approach src/pre_approach_v2.cpp)
 ament_target_dependencies(final_approach rclcpp std_msgs geometry_msgs nav_msgs sensor_msgs tf2 tf2_ros)
+rosidl_target_interfaces(final_approach ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 install(TARGETS
   pre_approach

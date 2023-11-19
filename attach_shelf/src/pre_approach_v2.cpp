@@ -131,7 +131,7 @@ private:
       if (final_approach_) //call service
       {
         auto request = std::make_shared<attach_shelf::srv::GoToLoading::Request>();
-        request->final_approach = final_approach_;
+        request->attach_to_shelf = final_approach_;
         auto result = srv_client_->async_send_request(request);
         step3_completed_ = result.get()->complete;
       }
