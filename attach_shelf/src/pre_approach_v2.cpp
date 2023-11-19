@@ -1,9 +1,12 @@
 /*ROS2 galactic
--use of arguments: obstacle, degrees
--starts publishing a linear velocity to the /robot/cmd_vel 
--when the laser detects an obstacle, it stops 'x' m, stop 
+-use of arguments: obstacle, degrees, final_approach
+1 starts publishing a linear velocity to the /robot/cmd_vel 
+when the laser detects an obstacle, it stops 'x' m, stop 
+2 turns 'y' degrees, stop
+3 call a service(/approach_shelf) for final approach
 */
 
+//general libraries
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/string.hpp>
 #include <geometry_msgs/msg/twist.hpp>
@@ -13,6 +16,8 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <math.h>
 #include <chrono>
+//custom service
+#include "attach_shelf/srv/go_to_loading.hpp"
 
 using std::placeholders::_1;
 
@@ -38,6 +43,8 @@ public:
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds((int)TIMER_PERIOD_MS_),
         std::bind(&RobotRB1::timer_callback, this));
+    //service client
+    srv_client_ = this->create_client<attach_shelf::srv::GoToLoading>("approach_shelf");
   }
 private:
     //publisher
@@ -60,6 +67,8 @@ private:
     //timer
     rclcpp::TimerBase::SharedPtr timer_;
     const float TIMER_PERIOD_MS_;
+    //service client
+    rclcpp::Client<attach_shelf::srv::GoToLoading>::SharedPtr srv_client_;
     //steps
     bool step1_completed_ = false;
     bool step2_completed_ = false;
@@ -116,7 +125,17 @@ private:
       float tolerance = 1.0*M_PI/180;
       step2_completed_=controller_kp(control_var, desired_var, kp, tolerance);
     }
-    
+    //step 3: go until obstacle by calling a service (if final_approach_ is true)
+    if (!step3_completed_ && step2_completed_)
+    {
+      if (final_approach_) //call service
+      {
+        auto request = std::make_shared<attach_shelf::srv::GoToLoading::Request>();
+        request->final_approach = final_approach_;
+        auto result = srv_client_->async_send_request(request);
+        step3_completed_ = result.get()->complete;
+      }
+    }
   }
 
   void robot_move(float linear_speed, float angular_speed)

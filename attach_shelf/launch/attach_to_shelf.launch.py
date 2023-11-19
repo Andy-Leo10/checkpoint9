@@ -87,7 +87,7 @@ def generate_launch_description():
             final_approach_arg,
             package_description_arg,
             rviz_config_file_name_arg,
+            start_service_server,
             start_rviz_launch,
-            start_final_approach_launch,
-            start_service_server
+            start_final_approach_launch
     ])

@@ -23,4 +23,8 @@ ros2 launch attach_shelf pre_approach.launch.xml obstacle:=0.3 degrees:=-90
 ```
 ros2 launch attach_shelf attach_to_shelf.launch.py obstacle:=0.3 degrees:=-90 final_approach:=true
 ```
+- [x] Move the robot
+```
+ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args --remap cmd_vel:=/robot/cmd_vel
+```
 
