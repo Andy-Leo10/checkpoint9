@@ -34,16 +34,16 @@ using std::placeholders::_2;
 class MyServiceServer : public rclcpp::Node
 {
 public:
-    MyServiceServer(std::string topic_pub, std::string topic_laser, std::string topic_odometry) : Node("my_service_server")
+    MyServiceServer(std::string topic_pub, std::string topic_laser, std::string topic_odometry)
+         : Node("my_service_server"), 
     {
-        //publisher
-        publisher_ = this->create_publisher<geometry_msgs::msg::Twist>(topic_pub, 10);
         //subscriber laser
         laser_subscriber_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
             topic_laser, 10, std::bind(&MyServiceServer::laser_intensities_callback, this, _1));
         //service
         service_ = this->create_service<GoToLanding>("approach_shelf", 
             std::bind(&MyServiceServer::service_callback, this, std::placeholders::_1, std::placeholders::_2));
+        execute_service_ = false;
         // initialize the tf2 listener for time stamp
         auto clock = this->get_clock();
         tf_buffer_ = std::make_shared<tf2_ros::Buffer>(clock);
@@ -53,21 +53,21 @@ public:
         //broadcast transform
         broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
         object_frame_ = "cart_frame";
+        //publisher
+        publisher_ = this->create_publisher<geometry_msgs::msg::Twist>(topic_pub, 10);
+        //timer
+        timer_ = this->create_wall_timer(
+        std::chrono::milliseconds((int)TIMER_PERIOD_MS_),
+        std::bind(&RobotRB1::timer_callback, this));
     }
 
 private:
-    //publisher
-    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
-    geometry_msgs::msg::Twist pub_msg_;
-    const float MAX_LINEAR_SPEED_=0.5;
-    const float MAX_ANGULAR_SPEED_=0.4;
-    const float ZERO_LINEAR_SPEED_ = 0.0;
-    const float ZERO_ANGULAR_SPEED_ = 0.0;
     //subscriber laser
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr laser_subscriber_;
     float front_distance_;
     //service
     rclcpp::Service<GoToLanding>::SharedPtr service_;
+    bool execute_service_;
     //variables
     float cart_magnitude_=0.0;
     float cart_x_=0.0;
@@ -83,6 +83,16 @@ private:
     std::shared_ptr<tf2_ros::TransformBroadcaster> broadcaster_;
     geometry_msgs::msg::TransformStamped transformStamped_;
     std::string object_frame_;
+    //publisher
+    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
+    geometry_msgs::msg::Twist pub_msg_;
+    const float MAX_LINEAR_SPEED_=0.5;
+    const float MAX_ANGULAR_SPEED_=0.4;
+    const float ZERO_LINEAR_SPEED_ = 0.0;
+    const float ZERO_ANGULAR_SPEED_ = 0.0;
+    //timer
+    rclcpp::TimerBase::SharedPtr timer_;
+    const float TIMER_PERIOD_MS_=100;
 
     void laser_intensities_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
     {
@@ -176,8 +186,27 @@ private:
             transformStamped_.transform.rotation.z = cart_quat_.z();
             transformStamped_.transform.rotation.w = cart_quat_.w();
             broadcaster_->sendTransform(transformStamped_);
+
+            //depending on the service request, move the robot to the cart_frame
+            if(execute_service_)
+            {
+                //calculate the distance to the cart_frame
+                float distance_to_cart = sqrt(pow(cart_x_,2)+pow(cart_y_,2));
+                //move the robot to the cart_frame
+                if(distance_to_cart>0.05)
+                {
+                    robot_move(MAX_LINEAR_SPEED_, ZERO_ANGULAR_SPEED_);
+                }
+                else
+                {
+                    robot_move(ZERO_LINEAR_SPEED_,ZERO_ANGULAR_SPEED_);
+                    execute_service_ = false;
+                }
+            }
         }
     }
+
+
 
     void service_callback(
         const std::shared_ptr<GoToLanding::Request> request,
@@ -188,10 +217,15 @@ private:
         {
             if(number_of_legs_==2)
             {
-                //code to move the robot to the cart_frame
+                //code to move the robot to the cart_frame inside laser callback
+                execute_service_ = true;
                 response->complete = true;
             }
-            else response->complete = false;
+            else
+            {
+                RCLCPP_INFO(this->get_logger(), "Number of legs detected is not 2: attach to shelf will not be executed");
+                response->complete = false;
+            }
         }
         else
         {
