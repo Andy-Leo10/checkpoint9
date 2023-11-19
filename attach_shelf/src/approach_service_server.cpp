@@ -211,7 +211,7 @@ private:
             transformStamped_.transform.rotation.z = cart_quat_.z();
             transformStamped_.transform.rotation.w = cart_quat_.w();
             broadcaster_->sendTransform(transformStamped_);
-
+    
             //depending on the service request, move the robot to the cart_frame
             if(execute_service_ && !move_extra_distance_)
             {

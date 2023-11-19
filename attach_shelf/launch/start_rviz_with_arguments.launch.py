@@ -11,13 +11,12 @@ from launch.actions import LogInfo
 
 def generate_launch_description():
 
+    #args for rviz
+    package_description_arg = DeclareLaunchArgument('package_description', default_value="attach_shelf")
+    rviz_config_file_name_arg = DeclareLaunchArgument('rviz_config_file_name', default_value='config1.rviz')
+    #params for rviz
     package_description = LaunchConfiguration('package_description')
-    package_description_arg = DeclareLaunchArgument(
-        'package_description', default_value="attach_shelf")
-
     rviz_config_file_name = LaunchConfiguration('rviz_config_file_name')
-    rviz_config_file_name_arg = DeclareLaunchArgument(
-        'rviz_config_file_name', default_value='config1.rviz')
 
     global_path_to_rviz_file = PathJoinSubstitution([
         FindPackageShare(package_description),

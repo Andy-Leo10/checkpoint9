@@ -35,14 +35,18 @@ ament_package()
 #cp9-part1
 add_executable(pre_approach src/pre_approach.cpp)
 ament_target_dependencies(pre_approach rclcpp std_msgs geometry_msgs nav_msgs sensor_msgs tf2 tf2_ros)
-#cp9-part2
+#cp9-part2-service
 add_executable(approach_service_server src/approach_service_server.cpp)
 ament_target_dependencies(approach_service_server rclcpp std_msgs geometry_msgs nav_msgs sensor_msgs tf2 tf2_ros)
 rosidl_target_interfaces(approach_service_server ${PROJECT_NAME} "rosidl_typesupport_cpp")
+#cp9-part2
+add_executable(final_approach src/pre_approach_v2.cpp)
+ament_target_dependencies(final_approach rclcpp std_msgs geometry_msgs nav_msgs sensor_msgs tf2 tf2_ros)
 
 install(TARGETS
   pre_approach
   approach_service_server
+  final_approach
   DESTINATION lib/${PROJECT_NAME})
 
 #folders

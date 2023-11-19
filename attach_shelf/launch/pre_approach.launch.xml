@@ -2,7 +2,6 @@
 
     <arg name="package_description" default="attach_shelf"/>
     <arg name="rviz_config_file_name" default="config1.rviz"/>
-    <arg name="custom_namespace" default="gypsi_danger"/>
     <arg name="obstacle" default="0.0"/>
     <arg name="degrees" default="0"/>
 
