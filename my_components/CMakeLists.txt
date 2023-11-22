@@ -40,6 +40,18 @@ ament_target_dependencies(pre_approach_component "rclcpp" "std_msgs" "geometry_m
 rclcpp_components_register_nodes(pre_approach_component "my_components::PreApproach")
 set(node_plugins "${node_plugins}my_components::PreApproach;$<TARGET_FILE:pre_approach_component>\n")
 
-
+#my components
+install(TARGETS
+  pre_approach_component
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+#my executables
+#install directories
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}
+)
 
 ament_package()

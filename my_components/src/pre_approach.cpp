@@ -1,4 +1,4 @@
-/*ROS2 galactic
+/*ROS2 humble
 -use of arguments: obstacle, degrees
 -starts publishing a linear velocity to the /robot/cmd_vel 
 -when the laser detects an obstacle, it stops 'x' m, stop 
