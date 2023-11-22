@@ -39,7 +39,7 @@ private:
     float orientation_;
     std::string topic_odometry_= "/diffbot_base_controller/odom";
     //arguments
-    float obstacle_=0.3;
+    float obstacle_=0.4;
     int degrees_=-90;
     //timer
     rclcpp::TimerBase::SharedPtr timer_;

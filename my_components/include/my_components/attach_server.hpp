@@ -3,7 +3,7 @@
 #include "my_components/visibility_control.h"
 
 #include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/empty.hpp>
+#include <std_msgs/msg/string.hpp>
 #include <geometry_msgs/msg/twist.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
@@ -44,12 +44,12 @@ private:
     float cart_yaw_=0.0;
     tf2::Quaternion cart_quat_;
     int number_of_legs_=0;
-    float extra_distance_=0.9;
+    float extra_distance_=0.99;
     int times_to_move_extra_distance_;
     // tf2 listener variables
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-    std::string origin_frame_ = "robot_odom";
+    std::string origin_frame_ = "odom";
     std::string destiny_frame_ = "robot_front_laser_base_link";
     //broadcast transform
     std::shared_ptr<tf2_ros::TransformBroadcaster> broadcaster_;
@@ -67,7 +67,7 @@ private:
     rclcpp::TimerBase::SharedPtr timer_;
     const float TIMER_PERIOD_MS_;
     //elevator up
-    rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr elevator_up_publisher_;
+    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr elevator_up_publisher_;
     std::string topic_elevator_up_ = "/elevator_up";
 protected:
     void timer_callback();

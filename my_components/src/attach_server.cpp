@@ -13,7 +13,7 @@
 namespace my_components
 {
 AttachServer::AttachServer(const rclcpp::NodeOptions & options)
-        : Node("attach_server"), TIMER_PERIOD_MS_(100)
+        : Node("attach_server", options), TIMER_PERIOD_MS_(100)
 {
     //subscriber laser
     laser_subscriber_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
@@ -34,8 +34,8 @@ AttachServer::AttachServer(const rclcpp::NodeOptions & options)
     timer_ = this->create_wall_timer(
     std::chrono::milliseconds((int)TIMER_PERIOD_MS_),
     std::bind(&AttachServer::timer_callback, this));
-    //elevator up: ros2 topic pub /elevator_up std_msgs/msg/Empty -1
-    elevator_up_publisher_ = this->create_publisher<std_msgs::msg::Empty>(topic_elevator_up_, 10);
+    //elevator up: ros2 topic pub /elevator_up std_msgs/msg/String "data: ''" --once
+    elevator_up_publisher_ = this->create_publisher<std_msgs::msg::String>(topic_elevator_up_, 10);
 }
 void AttachServer::timer_callback()
 {
@@ -56,7 +56,8 @@ void AttachServer::timer_callback()
             execute_service_ = false;
             //publish to the topics /elevator_up
             RCLCPP_INFO(this->get_logger(), "Publishing to elevator_up");
-            std_msgs::msg::Empty msg;
+            std_msgs::msg::String msg;
+            elevator_up_publisher_->publish(msg);
             elevator_up_publisher_->publish(msg);
         }
 
