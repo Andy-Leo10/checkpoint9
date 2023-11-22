@@ -1,15 +1,18 @@
-/*ROS2 humble
-call a service(/approach_shelf) for executing the final approach
-*/
+#include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/string.hpp>
+#include <math.h>
+#include <chrono>
+#include "attach_shelf/srv/go_to_loading.hpp"
 
-#include "my_components/attach_client.hpp"
+using GoToLanding = attach_shelf::srv::GoToLoading;
 
-namespace my_components
+class AttachClient2 : public rclcpp::Node
 {
-AttachClient::AttachClient(const rclcpp::NodeOptions & options)
-    : Node("attach_client", options)
+public:
+AttachClient2(const rclcpp::NodeOptions & options)
+: Node("attach_client2", options)
 {
-//service client
+    //service client
     srv_client_ = this->create_client<GoToLanding>("approach_shelf");
 
     // Wait for the service to be available
@@ -30,7 +33,15 @@ AttachClient::AttachClient(const rclcpp::NodeOptions & options)
         RCLCPP_ERROR(this->get_logger(), "Service call failed");
     }
 }
-} // namespace my_components
+private:
+    //service client
+    rclcpp::Client<GoToLanding>::SharedPtr srv_client_;
+};
 
-#include "rclcpp_components/register_node_macro.hpp"
-RCLCPP_COMPONENTS_REGISTER_NODE(my_components::AttachClient)
+int main(int argc, char * argv[])
+{
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<AttachClient2>(rclcpp::NodeOptions()));
+    rclcpp::shutdown();
+    return 0;
+}

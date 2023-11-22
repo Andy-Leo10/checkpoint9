@@ -57,6 +57,10 @@ ament_target_dependencies(attach_client_component "rclcpp" "std_msgs" "geometry_
 rclcpp_components_register_nodes(attach_client_component "my_components::AttachClient")
 set(node_plugins "${node_plugins}my_components::AttachClient;$<TARGET_FILE:attach_client_component>\n")
 
+#draft
+add_executable(draft src/draft.cpp)
+ament_target_dependencies(draft "rclcpp" "std_msgs" "attach_shelf")
+
 #my components
 install(TARGETS
   pre_approach_component
@@ -67,6 +71,9 @@ install(TARGETS
   RUNTIME DESTINATION bin
 )
 #my executables
+install(TARGETS
+  draft
+  DESTINATION lib/${PROJECT_NAME})
 #install directories
 install(DIRECTORY
   launch
