@@ -1,30 +1,29 @@
-# Approach motion of RB1
+# Approach motion of RB1 v.Container
 
 ## Mandatory
-+ Start the simulation in ROS1
++ Start the simulation in ROS2
 ```
-source ~/simulation_ws/devel/setup.bash
-roslaunch rb1_base_gazebo warehouse_rb1.launch
+source ~/sim_ws/install/setup.bash
+ros2 launch the_construct_office_gazebo warehouse_rb1.launch.xml
 ```
-+ Start the ROS1 bridge
++ Start the container
 ```
-source ~/catkin_ws/devel/setup.bash
-roslaunch load_params load_params_base.launch
-source /opt/ros/galactic/setup.bash
-ros2 run ros1_bridge parameter_bridge
+ros2 run rclcpp_components component_container
 ```
 
 ## Launch files
 - [x] Pre approach
 ```
-ros2 launch attach_shelf pre_approach.launch.xml obstacle:=0.3 degrees:=-90
+ros2 component load /ComponentManager my_components my_components::PreApproach
 ```
 - [x] Pre approach and final approach
 ```
-ros2 launch attach_shelf attach_to_shelf.launch.py obstacle:=0.3 degrees:=-90 final_approach:=true
+ros2 launch my_components attach_to_shelf.launch.py
+ros2 service list | grep approach_shelf
+ros2 component load /my_container my_components my_components::AttachClient
 ```
-- [x] Move the robot
+- [ ] Move the robot
 ```
-ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args --remap cmd_vel:=/robot/cmd_vel
+ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args --remap cmd_vel:=/diffbot_base_controller/cmd_vel_unstamped
 ```
 
