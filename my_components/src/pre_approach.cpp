@@ -9,7 +9,7 @@
 namespace my_components
 {
 PreApproach::PreApproach(const rclcpp::NodeOptions & options)
-      : Node("robot_rb1", options), 
+      : Node("pre_approach", options), 
       MAX_LINEAR_SPEED_(0.5), MAX_ANGULAR_SPEED_(0.4), TIMER_PERIOD_MS_(100)
 {
     //publisher
@@ -20,9 +20,6 @@ PreApproach::PreApproach(const rclcpp::NodeOptions & options)
     //subscriber odometry
     odometry_subscriber_ = this->create_subscription<nav_msgs::msg::Odometry>(
         topic_odometry_, 10, std::bind(&PreApproach::odometry_callback, this, _1));
-    //parameters
-    this->declare_parameter<float>("obstacle", 0.0);
-    this->declare_parameter<int>("degrees", 0);
     //timer
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds((int)TIMER_PERIOD_MS_),
@@ -51,8 +48,6 @@ void PreApproach::odometry_callback(const nav_msgs::msg::Odometry::SharedPtr msg
 
 void PreApproach::timer_callback()
 {
-    this->get_parameter("obstacle", obstacle_);
-    this->get_parameter("degrees", degrees_);
     //step 1: go until obstacle
     if (!step1_completed_)
     {
