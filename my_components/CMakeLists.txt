@@ -30,4 +30,16 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+
+include_directories(include)
+#library definition1
+add_library(pre_approach_component SHARED src/pre_approach.cpp)
+target_compile_definitions(pre_approach_component PRIVATE "COMPOSITION_BUILDING_DLL")
+ament_target_dependencies(pre_approach_component "rclcpp" "std_msgs" "geometry_msgs" "nav_msgs" "sensor_msgs" "tf2" "tf2_ros" "rclcpp_components" "composition")
+#register the component1 - RUN TIME
+rclcpp_components_register_nodes(pre_approach_component "my_components::PreApproach")
+set(node_plugins "${node_plugins}my_components::PreApproach;$<TARGET_FILE:pre_approach_component>\n")
+
+
+
 ament_package()
