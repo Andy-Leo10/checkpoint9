@@ -17,6 +17,7 @@ find_package(tf2_ros REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(composition REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(attach_shelf REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -40,9 +41,18 @@ ament_target_dependencies(pre_approach_component "rclcpp" "std_msgs" "geometry_m
 rclcpp_components_register_nodes(pre_approach_component "my_components::PreApproach")
 set(node_plugins "${node_plugins}my_components::PreApproach;$<TARGET_FILE:pre_approach_component>\n")
 
+#library definition2
+add_library(attach_server_component SHARED src/attach_server.cpp)
+target_compile_definitions(attach_server_component PRIVATE "COMPOSITION_BUILDING_DLL")
+ament_target_dependencies(attach_server_component "rclcpp" "std_msgs" "geometry_msgs" "nav_msgs" "sensor_msgs" "tf2" "tf2_ros" "rclcpp_components" "composition" "std_srvs")
+#register the component2 - RUN TIME
+rclcpp_components_register_nodes(attach_server_component "my_components::AttachServer")
+set(node_plugins "${node_plugins}my_components::AttachServer;$<TARGET_FILE:attach_server_component>\n")
+
 #my components
 install(TARGETS
   pre_approach_component
+  attach_server_component
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
