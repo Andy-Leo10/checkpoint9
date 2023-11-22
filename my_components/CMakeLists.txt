@@ -49,10 +49,19 @@ ament_target_dependencies(attach_server_component "rclcpp" "std_msgs" "geometry_
 rclcpp_components_register_nodes(attach_server_component "my_components::AttachServer")
 set(node_plugins "${node_plugins}my_components::AttachServer;$<TARGET_FILE:attach_server_component>\n")
 
+#library definition3
+add_library(attach_client_component SHARED src/attach_client.cpp)
+target_compile_definitions(attach_client_component PRIVATE "COMPOSITION_BUILDING_DLL")
+ament_target_dependencies(attach_client_component "rclcpp" "std_msgs" "geometry_msgs" "nav_msgs" "sensor_msgs" "tf2" "tf2_ros" "rclcpp_components" "composition" "std_srvs" "attach_shelf")
+#register the component3 - RUN TIME
+rclcpp_components_register_nodes(attach_client_component "my_components::AttachClient")
+set(node_plugins "${node_plugins}my_components::AttachClient;$<TARGET_FILE:attach_client_component>\n")
+
 #my components
 install(TARGETS
   pre_approach_component
   attach_server_component
+  attach_client_component
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
