@@ -11,7 +11,7 @@
 
 using GoToLanding = attach_shelf::srv::GoToLoading;
 using std::placeholders::_1;
-using std::placeholders::_2;
+using namespace std::chrono_literals;
 
 namespace my_components
 {
@@ -23,6 +23,12 @@ public:
 private:
     //service client
     rclcpp::Client<GoToLanding>::SharedPtr srv_client_;
+    bool service_done_=false;
+    //timer
+    rclcpp::TimerBase::SharedPtr timer_;
+protected:
+    void timer_callback();
+    void response_callback(rclcpp::Client<GoToLanding>::SharedFuture future);
 };
 }  // namespace my_components
 

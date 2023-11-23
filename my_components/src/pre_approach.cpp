@@ -70,7 +70,7 @@ void PreApproach::timer_callback()
         */
         float control_var=orientation_*M_PI/180;
         float desired_var=degrees_*M_PI/180;
-        float kp = 1.0;
+        float kp = 1.5;
         float tolerance = 1.0*M_PI/180;
         step2_completed_=controller_kp(control_var, desired_var, kp, tolerance);
     }
