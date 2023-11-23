@@ -1,4 +1,8 @@
-# Approach motion of RB1
+# Approach motion of RB1 v.Parameters
+
+
+https://github.com/Andy-Leo10/checkpoint9/assets/60716487/5d5d8d0d-32ed-4309-8ce6-6cc45c4b8769
+
 
 ## Mandatory
 + Start the simulation in ROS1
